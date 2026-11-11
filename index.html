@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stay in Touch</title>
+  <meta name="theme-color" content="#1f2a44">
+  <style>
+    :root {
+      --bg: #f4f5f8;
+      --card: #ffffff;
+      --text: #1b1f2a;
+      --muted: #5c6475;
+      --border: #d5d9e2;
+      --accent: #1f2a44;
+      --accent-text: #ffffff;
+      --focus: #3b6cf6;
+      --error: #c0392b;
+      --success: #1e8e4e;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11141b;
+        --card: #1b1f2a;
+        --text: #eef0f5;
+        --muted: #a3aabb;
+        --border: #343a4a;
+        --accent: #e8ecf7;
+        --accent-text: #11141b;
+        --focus: #7c9cff;
+        --error: #ff7b6b;
+        --success: #5fd38d;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+    main {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    .lede { margin: 0 0 24px; color: var(--muted); }
+    .field { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; }
+    input {
+      width: 100%;
+      font: inherit;
+      font-size: 16px; /* prevents iOS zoom on focus */
+      padding: 12px 14px;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    input:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+    input[aria-invalid="true"] { border-color: var(--error); }
+    .error { color: var(--error); font-size: 0.85rem; margin-top: 4px; min-height: 1em; }
+    button {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      font: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--accent-text);
+      background: var(--accent);
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    .status { margin-top: 14px; font-size: 0.9rem; text-align: center; min-height: 1.5em; }
+    .status.error { color: var(--error); }
+    .thanks { text-align: center; }
+    .thanks .check {
+      width: 56px; height: 56px; margin: 0 auto 12px;
+      border-radius: 50%; display: grid; place-items: center;
+      background: var(--success); color: var(--card); font-size: 28px;
+    }
+    .link-btn {
+      background: none; color: var(--muted); text-decoration: underline;
+      font-weight: 400; font-size: 0.9rem; margin-top: 16px; padding: 8px;
+    }
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="form-view">
+      <h1 id="title">Stay in touch</h1>
+      <p class="lede" id="subtitle">Leave your details and we'll keep you posted.</p>
+
+      <form id="signup" novalidate>
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input id="firstName" name="firstName" type="text" autocomplete="given-name" autocapitalize="words" required maxlength="100">
+          <div class="error" id="firstName-error" aria-live="polite"></div>
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input id="lastName" name="lastName" type="text" autocomplete="family-name" autocapitalize="words" required maxlength="100">
+          <div class="error" id="lastName-error" aria-live="polite"></div>
+        </div>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required maxlength="254">
+          <div class="error" id="email-error" aria-live="polite"></div>
+        </div>
+
+        <!-- Honeypot: hidden from people, bots tend to fill it in -->
+        <div class="hp" aria-hidden="true">
+          <label for="website">Website</label>
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="submit" id="submit">Submit</button>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section id="thanks-view" class="thanks" hidden>
+      <div class="check" aria-hidden="true">&#10003;</div>
+      <h1>Thanks, <span id="thanks-name"></span>!</h1>
+      <p class="lede">You're all set. Enjoy the event.</p>
+      <button type="button" class="link-btn" id="again">Register someone else</button>
+    </section>
+  </main>
+
+  <script>
+    // ---------------------------------------------------------------
+    // CONFIG
+    // Set SUBMIT_URL to the endpoint that receives submissions, e.g. a
+    // deployed Google Apps Script web app URL (see apps-script/Code.gs).
+    // Leave empty to run in demo mode (entries saved in this browser only).
+    // ---------------------------------------------------------------
+    const SUBMIT_URL = "";
+
+    // Optional URL params, so one page can serve many QR codes:
+    //   ?event=dreambne-launch&title=Welcome!&subtitle=Sign%20up%20below
+    const params = new URLSearchParams(location.search);
+    const EVENT = (params.get("event") || "").slice(0, 100);
+    if (params.get("title")) document.getElementById("title").textContent = params.get("title");
+    if (params.get("subtitle")) document.getElementById("subtitle").textContent = params.get("subtitle");
+
+    const form = document.getElementById("signup");
+    const submitBtn = document.getElementById("submit");
+    const statusEl = document.getElementById("status");
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    function setError(id, msg) {
+      const input = document.getElementById(id);
+      document.getElementById(id + "-error").textContent = msg;
+      input.setAttribute("aria-invalid", msg ? "true" : "false");
+      return !msg;
+    }
+
+    function validate(data) {
+      const ok = [
+        setError("firstName", data.firstName ? "" : "Please enter your first name."),
+        setError("lastName", data.lastName ? "" : "Please enter your last name."),
+        setError("email", !data.email ? "Please enter your email address."
+          : EMAIL_RE.test(data.email) ? "" : "That email address doesn't look right."),
+      ];
+      const firstBad = ["firstName", "lastName", "email"][ok.indexOf(false)];
+      if (firstBad) document.getElementById(firstBad).focus();
+      return ok.every(Boolean);
+    }
+
+    async function send(entry) {
+      if (!SUBMIT_URL) {
+        // Demo mode: keep entries on this device only.
+        try {
+          const all = JSON.parse(localStorage.getItem("signups") || "[]");
+          all.push(entry);
+          localStorage.setItem("signups", JSON.stringify(all));
+        } catch (_) { /* storage unavailable; ignore in demo mode */ }
+        console.info("Demo mode: entry captured locally", entry);
+        return;
+      }
+      // text/plain keeps this a "simple" CORS request (no preflight),
+      // which Google Apps Script and most form backends accept.
+      const res = await fetch(SUBMIT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(entry),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "";
+      statusEl.classList.remove("error");
+
+      const data = {
+        firstName: form.firstName.value.trim(),
+        lastName: form.lastName.value.trim(),
+        email: form.email.value.trim().toLowerCase(),
+      };
+      if (!validate(data)) return;
+
+      if (form.website.value) { showThanks(data.firstName); return; } // bot
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting…";
+      try {
+        await send({ ...data, event: EVENT, submittedAt: new Date().toISOString() });
+        showThanks(data.firstName);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Something went wrong. Please check your connection and try again.";
+        statusEl.classList.add("error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+      }
+    });
+
+    function showThanks(name) {
+      document.getElementById("thanks-name").textContent = name;
+      document.getElementById("form-view").hidden = true;
+      document.getElementById("thanks-view").hidden = false;
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById("again").addEventListener("click", () => {
+      form.reset();
+      ["firstName", "lastName", "email"].forEach((id) => setError(id, ""));
+      document.getElementById("thanks-view").hidden = true;
+      document.getElementById("form-view").hidden = false;
+      form.firstName.focus();
+    });
+  </script>
+</body>
+</html>
