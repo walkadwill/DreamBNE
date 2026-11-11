@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Scan to Enter</title>
+  <meta name="theme-color" content="#ffffff">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh; min-height: 100dvh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; padding: 24px 16px;
+      background: #ffffff; color: #111111; /* always light: QR codes scan best dark-on-white */
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+    }
+    h1 { font-size: 1.9rem; margin: 0; }
+    p { margin: 0; color: #444; }
+    #qr { width: min(80vw, 60vh, 420px); aspect-ratio: 1; }
+    #qr svg { width: 100%; height: 100%; display: block; }
+    .url { font-size: 0.8rem; color: #777; word-break: break-all; max-width: 420px; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Scan to enter the prize draw</h1>
+  <div id="qr" role="img" aria-label="QR code linking to the entry form"></div>
+  <p>Point your phone camera at the code.</p>
+  <p class="url" id="url"></p>
+
+  <script src="vendor/qrcode-generator.js"></script>
+  <script>
+    // The QR points at index.html next to this page. Any ?event=, title= or
+    // subtitle= params on this page are passed through to the form.
+    const params = new URLSearchParams(location.search);
+    const target = new URL("index.html", location.href);
+    for (const k of ["event", "title", "subtitle"]) {
+      if (params.get(k)) target.searchParams.set(k, params.get(k));
+    }
+    if (params.get("heading")) document.getElementById("title").textContent = params.get("heading");
+    document.getElementById("url").textContent = target.href;
+    // Draw the QR code as a crisp, scalable SVG.
+    const qr = qrcode(0, "M");
+    qr.addData(target.href);
+    qr.make();
+    const n = qr.getModuleCount(), quiet = 4, size = n + quiet * 2;
+    let path = "";
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (qr.isDark(r, c)) path += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+    document.getElementById("qr").innerHTML =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">` +
+      `<rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
+
+    // Keep the phone screen on while showing the code.
+    async function keepAwake() {
+      try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); } catch (_) {}
+    }
+    keepAwake();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) keepAwake(); });
+  </script>
+</body>
+</html>

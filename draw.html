@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Prize Draw</title>
+  <style>
+    :root {
+      --bg: #f4f5f8; --card: #ffffff; --text: #1b1f2a; --muted: #5c6475;
+      --border: #d5d9e2; --accent: #1f2a44; --accent-text: #ffffff;
+      --focus: #3b6cf6; --error: #c0392b; --gold: #b7860b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11141b; --card: #1b1f2a; --text: #eef0f5; --muted: #a3aabb;
+        --border: #343a4a; --accent: #e8ecf7; --accent-text: #11141b;
+        --focus: #7c9cff; --error: #ff7b6b; --gold: #f2c14e;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh; padding: 24px 16px;
+      background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5;
+    }
+    main { max-width: 560px; margin: 0 auto; }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .muted { color: var(--muted); margin: 0 0 20px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; margin-bottom: 16px;
+    }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; }
+    input, select {
+      width: 100%; font: inherit; font-size: 16px; padding: 11px 13px;
+      color: var(--text); background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    input:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+    .row { display: flex; gap: 10px; margin-top: 12px; }
+    .row > * { flex: 1; }
+    button {
+      width: 100%; padding: 13px; font: inherit; font-weight: 600; font-size: 1rem;
+      color: var(--accent-text); background: var(--accent);
+      border: 0; border-radius: 10px; cursor: pointer;
+    }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .stats { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .big { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .error { color: var(--error); margin-top: 10px; min-height: 1.2em; font-size: 0.9rem; }
+    ol.winners { list-style: none; padding: 0; margin: 0; }
+    ol.winners li {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0; border-top: 1px solid var(--border);
+    }
+    ol.winners li:first-child { border-top: 0; }
+    .place { font-size: 0.8rem; color: var(--muted); width: 3.2em; flex: none; }
+    .num {
+      font-size: 2.4rem; font-weight: 800; min-width: 3.2ch; flex: none;
+      font-variant-numeric: tabular-nums; color: var(--gold);
+    }
+    .who { min-width: 0; overflow-wrap: anywhere; }
+    .who .name { font-weight: 600; font-size: 1.1rem; }
+    .who .email { color: var(--muted); font-size: 0.9rem; }
+    .rolling .num { color: var(--muted); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Prize draw</h1>
+    <p class="muted">Staff only. Load the entries, then draw the winners.</p>
+
+    <section class="card" id="login-card">
+      <label for="key">Admin key</label>
+      <input id="key" type="password" autocomplete="current-password">
+      <div class="row"><button id="load">Load entries</button></div>
+      <div class="error" id="load-error" role="alert"></div>
+    </section>
+
+    <section class="card" id="entries-card" hidden>
+      <div class="stats">
+        <div><div class="big" id="count">0</div><div class="muted" style="margin:0">entries</div></div>
+        <button class="secondary" id="refresh" style="width:auto;padding:8px 14px">Refresh</button>
+      </div>
+      <div style="margin-top:14px" id="event-wrap" hidden>
+        <label for="event">Event</label>
+        <select id="event"></select>
+      </div>
+      <div class="row"><button id="draw">Draw winners</button></div>
+      <div class="error" id="draw-error" role="alert"></div>
+    </section>
+
+    <section class="card" id="results-card" hidden>
+      <ol class="winners" id="winners"></ol>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    const CFG = window.APP_CONFIG || {};
+    const SUBMIT_URL = CFG.SUBMIT_URL || "";
+    const WINNERS = CFG.WINNERS || 3;
+    const $ = (id) => document.getElementById(id);
+    let entries = [];
+
+    try { $("key").value = sessionStorage.getItem("drawKey") || ""; } catch (_) {}
+    if (!SUBMIT_URL) {
+      $("key").closest(".card").querySelector("label").textContent = "Admin key (demo mode: not needed)";
+    }
+    $("draw").textContent = `Draw ${WINNERS} winner${WINNERS === 1 ? "" : "s"}`;
+
+    async function fetchEntries() {
+      if (!SUBMIT_URL) {
+        try { return JSON.parse(localStorage.getItem("entries") || "[]"); } catch (_) { return []; }
+      }
+      const url = new URL(SUBMIT_URL);
+      url.searchParams.set("key", $("key").value);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const out = await res.json();
+      if (!out.ok) throw new Error(out.error === "Unauthorized" ? "Wrong admin key." : out.error);
+      return out.entries;
+    }
+
+    async function load() {
+      $("load-error").textContent = "";
+      $("load").disabled = $("refresh").disabled = true;
+      try {
+        entries = await fetchEntries();
+        try { sessionStorage.setItem("drawKey", $("key").value); } catch (_) {}
+        $("login-card").hidden = true;
+        $("entries-card").hidden = false;
+        renderEvents();
+        updateCount();
+      } catch (err) {
+        $("load-error").textContent = "Couldn't load entries: " + err.message;
+        $("draw-error").textContent = $("entries-card").hidden ? "" : "Couldn't refresh: " + err.message;
+      } finally {
+        $("load").disabled = $("refresh").disabled = false;
+      }
+    }
+
+    function renderEvents() {
+      const events = [...new Set(entries.map((e) => e.event).filter(Boolean))].sort();
+      const sel = $("event"), prev = sel.value;
+      sel.innerHTML = "";
+      sel.add(new Option("All events", ""));
+      events.forEach((ev) => sel.add(new Option(ev, ev)));
+      sel.value = events.includes(prev) ? prev : "";
+      $("event-wrap").hidden = events.length === 0;
+    }
+
+    function pool() {
+      const ev = $("event").value;
+      return ev ? entries.filter((e) => e.event === ev) : entries;
+    }
+
+    function updateCount() {
+      const n = pool().length;
+      $("count").textContent = n;
+      $("draw").disabled = n === 0;
+      $("draw-error").textContent = n > 0 && n < WINNERS
+        ? `Only ${n} ${n === 1 ? "entry" : "entries"}, so everyone wins.` : "";
+    }
+
+    // Unbiased random integer in [0, max) using the browser's crypto RNG.
+    function randInt(max) {
+      const limit = Math.floor(0x100000000 / max) * max;
+      const buf = new Uint32Array(1);
+      do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+      return buf[0] % max;
+    }
+
+    // Pick k distinct entries (partial Fisher-Yates shuffle).
+    function pickWinners(list, k) {
+      const a = list.slice();
+      const n = Math.min(k, a.length);
+      for (let i = 0; i < n; i++) {
+        const j = i + randInt(a.length - i);
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a.slice(0, n);
+    }
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const PLACES = ["1st", "2nd", "3rd"];
+
+    async function draw() {
+      const list = pool();
+      if (!list.length) return;
+      const winners = pickWinners(list, WINNERS);
+      const ol = $("winners");
+      ol.innerHTML = "";
+      $("results-card").hidden = false;
+      $("draw").disabled = $("refresh").disabled = true;
+
+      for (let i = 0; i < winners.length; i++) {
+        const li = document.createElement("li");
+        li.className = "rolling";
+        li.innerHTML = `<span class="place"></span><span class="num"></span>
+          <span class="who"><div class="name"></div><div class="email"></div></span>`;
+        li.querySelector(".place").textContent = PLACES[i] || `${i + 1}th`;
+        ol.appendChild(li);
+        const numEl = li.querySelector(".num");
+        // Short suspense roll through random entry numbers, then reveal.
+        for (let t = 0; t < 18; t++) {
+          numEl.textContent = "#" + list[randInt(list.length)].entryNumber;
+          await sleep(40 + t * 6);
+        }
+        const w = winners[i];
+        li.className = "";
+        numEl.textContent = "#" + w.entryNumber;
+        li.querySelector(".name").textContent = `${w.firstName} ${w.lastName}`;
+        li.querySelector(".email").textContent = w.email;
+        await sleep(500);
+      }
+      $("draw").textContent = "Draw again";
+      $("draw").disabled = $("refresh").disabled = false;
+    }
+
+    $("load").addEventListener("click", load);
+    $("key").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+    $("refresh").addEventListener("click", load);
+    $("event").addEventListener("change", updateCount);
+    $("draw").addEventListener("click", draw);
+  </script>
+</body>
+</html>

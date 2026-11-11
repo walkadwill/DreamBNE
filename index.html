@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Stay in Touch</title>
+  <title>Prize Draw Entry</title>
   <meta name="theme-color" content="#1f2a44">
   <style>
     :root {
@@ -93,6 +93,10 @@
       border-radius: 50%; display: grid; place-items: center;
       background: var(--success); color: var(--card); font-size: 28px;
     }
+    .entry-no {
+      font-size: 3.5rem; font-weight: 800; letter-spacing: 0.02em;
+      margin: 4px 0 16px; font-variant-numeric: tabular-nums;
+    }
     .link-btn {
       background: none; color: var(--muted); text-decoration: underline;
       font-weight: 400; font-size: 0.9rem; margin-top: 16px; padding: 8px;
@@ -104,8 +108,8 @@
 <body>
   <main>
     <section id="form-view">
-      <h1 id="title">Stay in touch</h1>
-      <p class="lede" id="subtitle">Leave your details and we'll keep you posted.</p>
+      <h1 id="title">Enter the prize draw</h1>
+      <p class="lede" id="subtitle">Add your details for a chance to win. Winners are drawn at the event.</p>
 
       <form id="signup" novalidate>
         <div class="field">
@@ -130,27 +134,24 @@
           <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
         </div>
 
-        <button type="submit" id="submit">Submit</button>
+        <button type="submit" id="submit">Enter the draw</button>
         <div class="status" id="status" role="status" aria-live="polite"></div>
       </form>
     </section>
 
     <section id="thanks-view" class="thanks" hidden>
       <div class="check" aria-hidden="true">&#10003;</div>
-      <h1>Thanks, <span id="thanks-name"></span>!</h1>
-      <p class="lede">You're all set. Enjoy the event.</p>
-      <button type="button" class="link-btn" id="again">Register someone else</button>
+      <h1>You're in, <span id="thanks-name"></span>!</h1>
+      <p class="lede" id="thanks-note">Your entry number is</p>
+      <div class="entry-no" id="entry-no"></div>
+      <p class="lede">Screenshot this screen. If your number is drawn, you win!</p>
+      <button type="button" class="link-btn" id="again">Enter someone else</button>
     </section>
   </main>
 
+  <script src="config.js"></script>
   <script>
-    // ---------------------------------------------------------------
-    // CONFIG
-    // Set SUBMIT_URL to the endpoint that receives submissions, e.g. a
-    // deployed Google Apps Script web app URL (see apps-script/Code.gs).
-    // Leave empty to run in demo mode (entries saved in this browser only).
-    // ---------------------------------------------------------------
-    const SUBMIT_URL = "";
+    const SUBMIT_URL = (window.APP_CONFIG || {}).SUBMIT_URL || "";
 
     // Optional URL params, so one page can serve many QR codes:
     //   ?event=dreambne-launch&title=Welcome!&subtitle=Sign%20up%20below
@@ -183,25 +184,30 @@
       return ok.every(Boolean);
     }
 
+    // Returns { entryNumber, duplicate }.
     async function send(entry) {
       if (!SUBMIT_URL) {
-        // Demo mode: keep entries on this device only.
-        try {
-          const all = JSON.parse(localStorage.getItem("signups") || "[]");
-          all.push(entry);
-          localStorage.setItem("signups", JSON.stringify(all));
-        } catch (_) { /* storage unavailable; ignore in demo mode */ }
-        console.info("Demo mode: entry captured locally", entry);
-        return;
+        // Demo mode: entries live in this browser only.
+        let all = [];
+        try { all = JSON.parse(localStorage.getItem("entries") || "[]"); } catch (_) {}
+        const existing = all.find((r) => r.email === entry.email);
+        if (existing) return { entryNumber: existing.entryNumber, duplicate: true };
+        const entryNumber = all.reduce((m, r) => Math.max(m, r.entryNumber), 0) + 1;
+        all.push({ entryNumber, ...entry });
+        try { localStorage.setItem("entries", JSON.stringify(all)); } catch (_) {}
+        return { entryNumber, duplicate: false };
       }
       // text/plain keeps this a "simple" CORS request (no preflight),
-      // which Google Apps Script and most form backends accept.
+      // which Google Apps Script accepts.
       const res = await fetch(SUBMIT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(entry),
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
+      const out = await res.json();
+      if (!out.ok) throw new Error(out.error || "Submission rejected");
+      return out;
     }
 
     form.addEventListener("submit", async (e) => {
@@ -216,25 +222,29 @@
       };
       if (!validate(data)) return;
 
-      if (form.website.value) { showThanks(data.firstName); return; } // bot
+      if (form.website.value) { showThanks(data.firstName, "—", false); return; } // bot
 
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting…";
       try {
-        await send({ ...data, event: EVENT, submittedAt: new Date().toISOString() });
-        showThanks(data.firstName);
+        const out = await send({ ...data, event: EVENT, submittedAt: new Date().toISOString() });
+        showThanks(data.firstName, out.entryNumber, out.duplicate);
       } catch (err) {
         console.error(err);
         statusEl.textContent = "Something went wrong. Please check your connection and try again.";
         statusEl.classList.add("error");
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = "Submit";
+        submitBtn.textContent = "Enter the draw";
       }
     });
 
-    function showThanks(name) {
+    function showThanks(name, entryNumber, duplicate) {
       document.getElementById("thanks-name").textContent = name;
+      document.getElementById("entry-no").textContent = "#" + entryNumber;
+      document.getElementById("thanks-note").textContent = duplicate
+        ? "You'd already entered with this email. Your entry number is"
+        : "Your entry number is";
       document.getElementById("form-view").hidden = true;
       document.getElementById("thanks-view").hidden = false;
       window.scrollTo(0, 0);
