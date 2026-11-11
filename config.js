@@ -11,7 +11,7 @@ window.APP_CONFIG = {
   // Branding shown at the top of every page.
   BRAND: {
     NAME: "Qualitia",
-    LOGO: "assets/logo.png",   // put the logo file here (PNG or SVG; wide logos look best)
-    COLOR: "",                 // optional brand colour for buttons, e.g. "#e4002b"
+    LOGO: "assets/logo.jpg",
+    COLOR: "",  // optional override for the button colour; pages already use Qualitia navy/periwinkle
   },
 };

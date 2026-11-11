@@ -10,7 +10,7 @@ Staff walk around with a QR code on their phones. Guests scan it, enter their **
 | `index.html` | Guests | Entry form. Shows the guest's entry number (e.g. **#42**) after they submit. |
 | `draw.html` | Staff | Enter the admin key, load entries, and draw 3 winners with a short reveal. |
 | `config.js` | Setup | Backend URL, number of winners, logo and brand colour. |
-| `assets/logo.png` | Setup | Your logo (add this file). |
+| `assets/logo.jpg` | Setup | Qualitia logo. |
 | `apps-script/Code.gs` | Setup | Free backend that stores entries in a Google Sheet. |
 
 ## How entries work
@@ -27,7 +27,7 @@ Staff walk around with a QR code on their phones. Guests scan it, enter their **
    2. Project Settings (gear icon) → Script properties → add `ADMIN_KEY` = a password of your choice.
    3. Deploy → New deployment → type **Web app**, Execute as **Me**, Who has access **Anyone**. Authorize it.
    4. Copy the web app URL into `SUBMIT_URL` in `config.js`.
-2. **Add the logo:** save the Qualitia logo as `assets/logo.png` (or change `BRAND.LOGO` in `config.js` to point at an `.svg`). Optionally set `BRAND.COLOR` to the brand colour for the buttons. Until a logo file exists, pages simply show no logo.
+2. **Branding:** the Qualitia logo is `assets/logo.jpg` and the pages use the Qualitia navy (`#0b132a`) and periwinkle (`#5c64f2`). To swap the logo, replace the file or change `BRAND.LOGO` in `config.js`.
 3. **Host on GitHub Pages:**
    1. GitHub Pages on a **private** repo needs a paid plan (GitHub Pro/Team). On a free account, make the repo public first (Settings → General → Danger Zone → Change visibility). The published site is public either way; entries stay private in your Google Sheet.
    2. Settings → Pages → Build and deployment → Source: **Deploy from a branch** → pick the branch and `/ (root)` → Save.
