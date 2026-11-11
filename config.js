@@ -3,7 +3,7 @@ window.APP_CONFIG = {
   // URL of the deployed Google Apps Script web app (see apps-script/Code.gs).
   // Leave empty for demo mode: entries are kept in this browser only, so the
   // entry and draw pages must be opened on the same device to test.
-  SUBMIT_URL: "",
+  SUBMIT_URL: "https://script.google.com/macros/s/AKfycbyiYWEZc1ztsfVbB0KoqSIVPvRd2HRRyiy1muabENQgJtx380XJ_63TPCJ1lS6smRZ30A/exec",
 
   // How many winners to draw.
   WINNERS: 3,
