@@ -237,7 +237,10 @@
         showThanks(data.firstName, out.entryNumber, out.duplicate);
       } catch (err) {
         console.error(err);
-        statusEl.textContent = "Something went wrong. Please check your connection and try again.";
+        const detail = err instanceof SyntaxError ? "Server did not return JSON (check the web app's access is set to Anyone)"
+          : err.message === "Failed to fetch" || err.message === "Load failed" ? "Could not reach the server"
+          : err.message;
+        statusEl.textContent = "Something went wrong. Please try again. (" + detail + ")";
         statusEl.classList.add("error");
       } finally {
         submitBtn.disabled = false;
