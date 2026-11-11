@@ -66,11 +66,13 @@
     .who .name { font-weight: 600; font-size: 1.1rem; }
     .who .email { color: var(--muted); font-size: 0.9rem; }
     .rolling .num { color: var(--muted); }
+    .logo { display: block; max-width: 180px; max-height: 64px; width: auto; height: auto; margin: 0 0 20px; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <main>
+    <img class="logo" alt="">
     <h1>Prize draw</h1>
     <p class="muted">Staff only. Load the entries, then draw the winners.</p>
 
@@ -100,6 +102,7 @@
   </main>
 
   <script src="config.js"></script>
+  <script src="brand.js"></script>
   <script>
     const CFG = window.APP_CONFIG || {};
     const SUBMIT_URL = CFG.SUBMIT_URL || "";

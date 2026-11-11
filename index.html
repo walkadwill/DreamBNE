@@ -102,11 +102,13 @@
       font-weight: 400; font-size: 0.9rem; margin-top: 16px; padding: 8px;
     }
     .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    .logo { display: block; max-width: 180px; max-height: 64px; width: auto; height: auto; margin: 0 0 20px; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <main>
+    <img class="logo" alt="">
     <section id="form-view">
       <h1 id="title">Enter the prize draw</h1>
       <p class="lede" id="subtitle">Add your details for a chance to win. Winners are drawn at the event.</p>
@@ -150,6 +152,7 @@
   </main>
 
   <script src="config.js"></script>
+  <script src="brand.js"></script>
   <script>
     const SUBMIT_URL = (window.APP_CONFIG || {}).SUBMIT_URL || "";
 

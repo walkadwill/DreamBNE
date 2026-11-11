@@ -9,7 +9,8 @@ Staff walk around with a QR code on their phones. Guests scan it, enter their **
 | `qr.html` | Staff | Full-screen QR code pointing at the entry form. Keeps the screen awake. |
 | `index.html` | Guests | Entry form. Shows the guest's entry number (e.g. **#42**) after they submit. |
 | `draw.html` | Staff | Enter the admin key, load entries, and draw 3 winners with a short reveal. |
-| `config.js` | Setup | Backend URL and number of winners. |
+| `config.js` | Setup | Backend URL, number of winners, logo and brand colour. |
+| `assets/logo.png` | Setup | Your logo (add this file). |
 | `apps-script/Code.gs` | Setup | Free backend that stores entries in a Google Sheet. |
 
 ## How entries work
@@ -26,10 +27,14 @@ Staff walk around with a QR code on their phones. Guests scan it, enter their **
    2. Project Settings (gear icon) → Script properties → add `ADMIN_KEY` = a password of your choice.
    3. Deploy → New deployment → type **Web app**, Execute as **Me**, Who has access **Anyone**. Authorize it.
    4. Copy the web app URL into `SUBMIT_URL` in `config.js`.
-2. **Host the pages** on any HTTPS static host. With GitHub Pages: repo Settings → Pages → deploy from this branch.
-3. **On the day**
-   - You and your colleague open `https://<your-site>/qr.html` on your phones and show the code.
-   - At draw time, open `https://<your-site>/draw.html`, enter the admin key, tap **Load entries**, then **Draw 3 winners**.
+2. **Add the logo:** save the Qualitia logo as `assets/logo.png` (or change `BRAND.LOGO` in `config.js` to point at an `.svg`). Optionally set `BRAND.COLOR` to the brand colour for the buttons. Until a logo file exists, pages simply show no logo.
+3. **Host on GitHub Pages:**
+   1. GitHub Pages on a **private** repo needs a paid plan (GitHub Pro/Team). On a free account, make the repo public first (Settings → General → Danger Zone → Change visibility). The published site is public either way; entries stay private in your Google Sheet.
+   2. Settings → Pages → Build and deployment → Source: **Deploy from a branch** → pick the branch and `/ (root)` → Save.
+   3. After a minute or two the site is live at `https://walkadwill.github.io/DreamBNE/`.
+4. **On the day**
+   - You and your colleague open `https://walkadwill.github.io/DreamBNE/qr.html` on your phones and show the code.
+   - At draw time, open `https://walkadwill.github.io/DreamBNE/draw.html`, enter the admin key, tap **Load entries**, then **Draw 3 winners**.
 
 ## Options
 
